@@ -50,6 +50,174 @@ onClick={() => this.handleClick()}>
 
 Второй способ не самый лучший. Рекомендуется делать привязку в конструкторе или использовать синтаксис полей классов, чтобы избежать проблем с производительностью.
 
+### Почему стрелочные функции и bind в React Render проблематичны
+
+Это делает `shouldComponentUpdate` и `PureComponent` капризными.
+
+App.tsx
+~~~
+class App extends React.Component<
+  {},
+  { users: { id: number; name: string }[] }
+> {
+  constructor(props: object) {
+    super(props);
+    this.state = {
+      users: [
+        { id: 1, name: "Cory" },
+        { id: 2, name: "Meg" },
+        { id: 3, name: "Bob" },
+      ],
+    };
+  }
+
+  deleteUser(id: number) {
+    this.setState((prevState) => {
+      return {
+        users: prevState.users.filter((user) => user.id !== id),
+      };
+    });
+  };
+
+  render() {
+    return (
+      <div>
+        <h1>Users</h1>
+        <ul>
+          {this.state.users.map((user) => {
+            return (
+              <User
+                key={user.id}
+                name={user.name}
+                onDeleteClick={() => this.deleteUser(user.id)}
+              />
+            );
+          })}
+        </ul>
+      </div>
+    );
+  }
+}
+
+export default App;
+~~~
+
+User.tsx
+~~~
+class User extends React.PureComponent<{
+  name: string;
+  onDeleteClick: () => void;
+}> {
+  render() {
+    const { name, onDeleteClick } = this.props;
+    console.log(`${name} just rendered`);
+    return (
+      <li>
+        <input type="button" value="Delete" onClick={onDeleteClick} />
+        {name}
+      </li>
+    );
+  }
+}
+
+export default User;
+~~~
+
+Здесь `User` объявлен как `PureComponent`. Таким образом, пользователь должен повторно отображать только при изменении пропсов или состояния. Но когда вы нажимаете «Удалить» пользователя, обратите внимание, что рендеринг вызывается для всех экземпляров `User`.
+
+И вот почему: родительский компонент передает стрелочную функцию. Стрелочные функции перераспределяются при каждом рендере (та же история с использованием привязки). Поэтому, хоть User.js объявлен как `PureComponent`, стрелочная функция в родительском элементе заставляет компонент `User` видеть новую функцию, отправляемую в свойствах для всех пользователей. Таким образом, каждый пользователь выполняет повторный рендеринг при нажатии любой кнопки удаления.
+
+Как исправить:
+
+App.tsx
+~~~
+class App extends React.Component<
+  {},
+  { users: { id: number; name: string }[] }
+> {
+  constructor(props: object) {
+    super(props);
+    this.state = {
+      users: [
+        { id: 1, name: "Cory" },
+        { id: 2, name: "Meg" },
+        { id: 3, name: "Bob" },
+      ],
+    };
+    this.deleteUser = this.deleteUser.bind(this);
+  }
+
+  deleteUser(id: number) {
+    this.setState((prevState) => {
+      return {
+        users: prevState.users.filter((user) => user.id !== id),
+      };
+    });
+  }
+
+  render() {
+    return (
+      <div>
+        <h1>Users</h1>
+        <ul>
+          {this.state.users.map((user) => {
+            return (
+              <User
+                key={user.id}
+                name={user.name}
+                id={user.id}
+                onDeleteClick={this.deleteUser}
+              />
+            );
+          })}
+        </ul>
+      </div>
+    );
+  }
+}
+
+export default App;
+~~~
+
+User.tsx
+~~~
+class User extends React.PureComponent<{
+  name: string;
+  id: number;
+  onDeleteClick: (id: number) => void;
+}> {
+  constructor(props: {
+    name: string;
+    id: number;
+    onDeleteClick: (id: number) => void;
+  }) {
+    super(props);
+    this.onDeleteButtonClick = this.onDeleteButtonClick.bind(this);
+  }
+
+  onDeleteButtonClick() {
+    this.props.onDeleteClick(this.props.id);
+  }
+
+  render() {
+    const { name } = this.props;
+    console.log(`${name} just rendered`);
+    return (
+      <li>
+        <input
+          type="button"
+          value="Delete"
+          onClick={this.onDeleteButtonClick}
+        />
+        {name}
+      </li>
+    );
+  }
+}
+
+export default User;
+~~~
+
 ### Passing Arguments to Event Handlers
 
 Внутри цикла часто нужно передать дополнительный аргумент в обработчик события. Например, если `id` — это идентификатор строки, можно использовать следующие варианты:
