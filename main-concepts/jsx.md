@@ -414,3 +414,5 @@ class AnotherComponent extends React.Component<{children: ReactNode}> {
   }
 }
 ~~~
+
+Существует [конвертер](https://transform.tools/html-to-jsx) для перевода существующих HTML в JSX.

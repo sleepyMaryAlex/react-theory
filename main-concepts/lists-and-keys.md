@@ -41,3 +41,64 @@ function NumberList(props: { numbers: number[] }) {
 ~~~
 
 Иногда это приводит к более чистому коду, но бывает и наоборот. Как и в любом JavaScript-коде, вам придётся самостоятельно решать, стоит ли извлекать код в переменную ради читабельности.
+
+### Is it a good idea to use `Math.random` for keys?
+
+Ключи должны быть стабильными, предсказуемыми и уникальными. Нестабильные ключи (например, произведённые с помощью `Math.random()`) вызовут необязательное пересоздание многих экземпляров компонента и DOM-узлов, что может вызывать ухудшение производительности и потерю состояния у дочерних компонентов.
+
+Ниже будет пример, который также можно попробовать и с `Math.random()`.
+
+В идеале ключи должны соответствовать уникальным и стабильным идентификаторам, исходящим из ваших данных, например `id`.
+
+React рекомендует не использовать индексы в качестве ключей, поскольку это может негативно сказаться на производительности и привести к нестабильному поведению компонентов. Ниже пример, почему индексы в качестве ключей могут приводить к ошибкам:
+
+App.tsx
+~~~
+function App() {
+  const [list, setList] = useState<{ name: string; id: number }[]>([
+    { name: "Foo1444610101010", id: 1444610101010 },
+    { name: "Bar1444600000000", id: 1444600000000 },
+  ]);
+
+  function addItem() {
+    const id = +new Date();
+    setList([{ name: "Baz" + id, id }, ...list]);
+  }
+
+  return (
+    <div>
+      <button onClick={addItem}>Add item</button>
+
+      <h3>
+        Dangerous <em>key=index</em>
+      </h3>
+      <form>
+        {list.map((todo, index) => (
+          <Item {...todo} key={index} />
+        ))}
+      </form>
+
+      <h3>
+        Better <em>key=id</em>
+      </h3>
+      <form>
+        {list.map((todo) => (
+          <Item {...todo} key={todo.id} />
+        ))}
+      </form>
+    </div>
+  );
+}
+~~~
+
+Item.tsx
+~~~
+function Item(props: { name: string; id: number }) {
+  return (
+    <div>
+      <label htmlFor="input">{props.name}</label>
+      <input id="input" type="text" />
+    </div>
+  );
+}
+~~~
