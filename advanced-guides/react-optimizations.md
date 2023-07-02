@@ -92,63 +92,6 @@ shouldComponentUpdate(nextProps, nextState) {
 
 Чтобы позволить React быстро распознавать новые изменения в вашем объекте состояния, вам следует избегать мутаций объекта и вместо этого создавать новый объект.
 
-~~~
-// Добавляем в конец массива
-// Плохо
-this.state.arr.push('foo');
-// Хорошо
-this.setState({
-  arr: [...this.state.arr, 'foo']
-})
-
-// Замена item в середине
-// Плохо
-this.state.arr[3] = 'foo';
-//Хорошо
-this.setState({
-  arr: this.state.arr.map((item, index) => index === 3 ? 'foo' : item)
-})
-
-//Добавление в середину массива
-// Плохо
-this.state.arr.splice(3, 0, 'foo');
-// Хорошо
-this.setState({
-  arr: [...this.state.arr.slice(0, 1), "foo", ...this.state.arr.slice(1)],
-});
-
-// Удаление из массива
-// Плохо
-this.state.arr.splice(2,1)
-// Хорошо
-this.setState({
-  arr: this.state.arr.filter((item, index) => index !== 2 )
-})
-~~~
-
-Чтобы написать это без мутирования исходного объекта, мы можем использовать синтаксис расширения свойств объекта.
-
-~~~
-// Вставка ключа
-// Плохо
-this.state.obj.key = 'bar';
-// Хорошо
-this.setState({
-  obj: {
-    ...this.state.obj,
-    key: 'bar'
-  }
-})
-
-// Удаление ключа
-// Плохое
-удаление this.state.obj.key;
-// Хорошее
-const {key, ...newObj} = this.state.objthis.setState({
-  obj: newObj
-})
-~~~
-
 ### `React.memo`
 
 Если получается так, что нужно избавиться от лишнего рендера, когда мы обновили состояние новым, но таким же по сути массивом (т.е. эти массивы не ведут на одну и ту же ссылку, но одинаковы), то можно использовать `React.memo`, чтобы изменить условие рендеринга, например:
