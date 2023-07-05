@@ -75,7 +75,6 @@ function App() {
   console.log("render");
 
   useEffect(() => {
-    // ref.current = "ref"; // чтобы исправить добавляем эту строчку
     console.log(ref.current);
     return () => {
       ref.current = null;
